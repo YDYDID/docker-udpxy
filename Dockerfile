@@ -17,6 +17,6 @@ RUN echo "5 6 * * * cd /data && python3 main.py >> /var/log/iptv.log 2>&1" > /et
 
 # 3. 启动命令：
 # 第一步加载定时任务 
-# 第二步容器启动时【立刻强制执行一次】python3 main.py，确保你每次部署或重启后，Jellyfin 马上就能看电视，不用傻等到凌晨4点
+# 第二步容器启动时【立刻强制执行一次】python3 main.py
 # 第三步启动 crond 守护进程撑住容器
 CMD crontab /etc/mix_cron && python3 main.py && crond -f -l 2
