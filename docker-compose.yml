@@ -1,7 +1,34 @@
-version: "2"
 services:
-  udpxy:
-    image: ifmm/udpxy
-    container_name: udpxy
-    network_mode: host
+  all-in-one-iptv:
+    build: .
+    container_name: all-in-one-iptv
     restart: always
+    cap_add:
+      - NET_ADMIN                     # 必须赋予网络管理权限，否则 udhcpc 无法在容器内改 IP
+    networks:
+      iptv_net:                       # 💥 容器内的第一块网卡（对应 eth0），负责走 IPTV 专网
+      lan_net:                        # 💥 容器内的第二块网卡（对应 eth1），负责接入局域网
+        ipv4_address: 192.168.100.22  # ！！！请为你家局域网内分配一个固定不冲突的 IP（给电视、手机访问）
+    volumes:
+      - /home/user/pcg-iptv-files:/data
+      - /home/iptv_data:/data/output
+
+networks:
+  # IPTV 专网：绑定宿主机的物理 eth0
+  iptv_net:
+    driver: macvlan
+    driver_opts:
+      parent: eth0
+    ipam:
+      config:
+        - subnet: 0.0.0.0/0           # 完全交由光猫 DHCP 决定
+
+  # 局域网：绑定宿主机的物理 eth1
+  lan_net:
+    driver: macvlan
+    driver_opts:
+      parent: eth1
+    ipam:
+      config:
+        - subnet: 192.168.100.0/24    # ！！！修改为你真实的局域网网段
+          gateway: 192.168.100.1      # ！！！修改为你真实的局域网路由器网关
