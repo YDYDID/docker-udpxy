@@ -13,7 +13,7 @@ RUN pip install --no-cache-dir requests beautifulsoup4 lxml --break-system-packa
 
 # 2. 配置定时任务：每天凌晨 06:05 自动到 /data 目录下执行 python 脚本
 # 并且把日志输出到终端，方便你用 docker logs 查看
-RUN echo "5 6 * * * cd /data && python3 gdctiptv.py >> /var/log/iptv.log 2>&1" > /etc/mix_cron
+RUN echo "5 6 * * * cd /data && python3 gdctiptv.py > /proc/1/fd/1 2>&1"  > /etc/mix_cron
 
 # 3. 启动命令：
 # 第一步加载定时任务 
