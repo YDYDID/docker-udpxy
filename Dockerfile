@@ -5,6 +5,48 @@ FROM ghcr.io/stackia/rtp2httpd:latest AS rtp_base
 FROM alpine:latest
 LABEL maintainer="ydydid"
 
+# 安装基础工具、Python 环境、定时任务，以及预编译的 py3-lxml 库
+RUN apk add --no-cache python3 py3-pip py3-lxml curl tzdata crontabs bash \
+    && rm -rf /var/cache/apk/*
+
+ENV TZ=Asia/Shanghai
+WORKDIR /data
+
+# 🚀 【修正吸收入 Dockerfile】完美注入 udhcpc 必须的基础回调脚本，确保拨号后 IP 能成功绑定到网卡
+RUN mkdir -p /usr/share/udhcpc \
+    && echo -e '#!/bin/sh\n[ "$1" = "bound" ] && ip addr add $ip/$mask dev $interface' > /usr/share/udhcpc/default.script \
+    && chmod +x /usr/share/udhcpc/default.script
+
+# 复制 rtp2httpd 可执行文件到系统路径
+COPY --from=rtp_base /usr/local/bin/rtp2httpd /usr/local/bin/rtp2httpd
+
+# 安装纯 Python 依赖库
+RUN pip install --no-cache-dir requests beautifulsoup4 --break-system-packages
+
+# 配置定时任务
+RUN echo "5 6 * * * cd /data && python3 gdctiptv.py > /proc/1/fd/1 2>&1" > /etc/mix_cron
+
+# 启动命令（CMD）：
+# 1. 载入定时任务
+# 2. 移除 -R 参数，让 eth0 直接成为默认网关！
+# 3. 完美继承：-x 0x3d:01$OPT_61（前缀 01 完美适配运营商机顶盒认证）
+# 4. 循环检测网卡，直到 eth0 真正绑定上私网 IP 后，放行 python3
+CMD crontab /etc/mix_cron \
+    && udhcpc -i eth0 -n -x hostname:"$OPT_12" -x 0x3d:"01$OPT_61" -V "$OPT_60" \
+    && echo "等待 IPTV 网络拨号就绪..." && while ! ip -4 addr show eth0 | grep -q 'inet '; do sleep 1; done \
+    && python3 gdctiptv.py \
+    && crond -l 2 \
+    && rtp2httpd -c /data/rtp2httpd.conf
+
+
+
+# 阶段 1：从 rtp2httpd 官方镜像中把已经编译好的二进制文件“借”过来
+FROM ghcr.io/stackia/rtp2httpd:latest AS rtp_base
+
+# 阶段 2：基于 Alpine 组装全家桶
+FROM alpine:latest
+LABEL maintainer="ydydid"
+
 # 安装基础工具、Python 环境、定时任务，以及 Alpine 官方预编译的 py3-lxml 库（防止 pip 编译失败）
 RUN apk add --no-cache python3 py3-pip py3-lxml curl tzdata crontabs bash \
     && rm -rf /var/cache/apk/*
