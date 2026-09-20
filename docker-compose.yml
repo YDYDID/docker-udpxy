@@ -1,34 +1,31 @@
+version: '3.8'
 services:
-  all-in-one-iptv:
-    build: .
-    container_name: all-in-one-iptv
-    restart: always
+  iptv-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: iptv_all_in_one
+    network_mode: host                 # 统一使用 host 网络，让局域网设备跨网段直接点播
+    restart: unless-stopped
+    
+    # ─── 【安全黄金防线】代替高风险的 privileged: true ───
     cap_add:
-      - NET_ADMIN                     # 必须赋予网络管理权限，否则 udhcpc 无法在容器内改 IP
-    networks:
-      iptv_net:                       # 💥 容器内的第一块网卡（对应 eth0），负责走 IPTV 专网
-      lan_net:                        # 💥 容器内的第二块网卡（对应 eth1），负责接入局域网
-        ipv4_address: 192.168.100.22  # ！！！请为你家局域网内分配一个固定不冲突的 IP（给电视、手机访问）
+      - NET_ADMIN                      # 仅允许容器合规地配置群晖 eth0 网卡的 IP 与默认路由
+    
+    # ─── 统一管理你的隐私凭证（在此处填写你抓包拿到的真实数据） ───
+    environment:
+      - TZ=Asia/Shanghai
+      - OPT_12=你的实际Option12            # 机顶盒主机名
+      - OPT_60=你的实际Option60            # 厂商标识字符串
+      - OPT_61=你的实际Option61            # 纯 16 进制 MAC 字符串（代码会在前方自动补全01）
+      
+      # 如果你在群晖上负责物理 IPTV 的网口在系统底层不叫 eth0，可以在这里覆盖：
+      - IPTV_NET=eth0                  # 接光猫 IPTV 的群晖网口
+      - LAN_NET=eth1                   # 接家里路由器的群晖主网口
+      - R2H_TOKEN=c7e5434060784ba2f6e1dc5844439b21  # 你的专属播放鉴权安全 Token
+    
+    # ─── 物理数据持久化 ───
     volumes:
-      - /home/user/pcg-iptv-files:/data
-      - /home/iptv_data:/data/output
-
-networks:
-  # IPTV 专网：绑定宿主机的物理 eth0
-  iptv_net:
-    driver: macvlan
-    driver_opts:
-      parent: eth0
-    ipam:
-      config:
-        - subnet: 0.0.0.0/0           # 完全交由光猫 DHCP 决定
-
-  # 局域网：绑定宿主机的物理 eth1
-  lan_net:
-    driver: macvlan
-    driver_opts:
-      parent: eth1
-    ipam:
-      config:
-        - subnet: 192.168.100.0/24    # ！！！修改为你真实的局域网网段
-          gateway: 192.168.100.1      # ！！！修改为你真实的局域网路由器网关
+      # 请确保你在群晖 File Station 的 docker 文件夹下提前创建了 iptv 子文件夹
+      - /volume1/docker/iptv:/data     
+      - /etc/localtime:/etc/localtime:ro
