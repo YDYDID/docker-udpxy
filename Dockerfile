@@ -26,6 +26,34 @@ RUN pip install --no-cache-dir requests beautifulsoup4 --break-system-packages
 # 配置定时任务
 RUN echo "5 6 * * * cd /data && python3 gdctiptv.py > /proc/1/fd/1 2>&1" > /etc/mix_cron
 
+# 最终的启动命令（CMD）：
+# 1. 载入定时任务
+# 2. 强制使用 eth0 发起带 Option 鉴权的 DHCP 请求。（去掉 -R，容器内默认网关锁定 IPTV）
+# 3. 循环检测网卡，直到 eth0 真正绑定上私网 IP 后，放行 python3
+# 4. 后台启动 crond 守护进程
+# 5. 启动 rtp2httpd：将固化的性能优化参数、关闭自带更新参数全部内置，网卡与安全 Token 使用变量动态读取！
+CMD crontab /etc/mix_cron \
+    && udhcpc -i eth0 -n -x hostname:"$OPT_12" -x 0x3d:"01$OPT_61" -V "$OPT_60" \
+    && echo "等待 IPTV 网络拨号就绪..." && while ! ip -4 addr show eth0 | grep -q 'inet '; do sleep 1; done \
+    && python3 gdctiptv.py \
+    && crond -l 2 \
+    && rtp2httpd \
+       --external-m3u "$M3U_PATH" \
+       --external-m3u-update-interval 0 \
+       --upstream-interface "$LAN_NET" \
+       --upstream-interface-fcc "$IPTV_NET" \
+       --upstream-interface-rtsp "$IPTV_NET" \
+       --upstream-interface-multicast "$IPTV_NET" \
+       --upstream-interface-http "$LAN_NET" \
+       --buffer-pool-max-size 65536 \
+       --udp-rcvbuf-size 16777216 \
+       --maxclients 10 \
+       --workers 2 \
+       --xff \
+       --r2h-token "$R2H_TOKEN"
+
+
+       
 # 启动命令（CMD）：
 # 1. 载入定时任务
 # 2. 移除 -R 参数，让 eth0 直接成为默认网关！
