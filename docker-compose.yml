@@ -4,7 +4,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: iptv_all_in_one
+    container_name: rtp2httpd
     network_mode: host                 # 统一使用 host 网络，让局域网设备跨网段直接点播
     restart: unless-stopped
     
@@ -22,7 +22,7 @@ services:
       # 如果你在群晖上负责物理 IPTV 的网口在系统底层不叫 eth0，可以在这里覆盖：
       - IPTV_NET=eth0                  # 接光猫 IPTV 的群晖网口
       - LAN_NET=eth1                   # 接家里路由器的群晖主网口
-      - R2H_TOKEN=c7e5434060784ba2f6e1dc5844439b21  # 你的专属播放鉴权安全 Token
+      - R2H_TOKEN=你的实际随机hex  # 你的专属播放鉴权安全 Token 命令: openssl rand -hex 16
     
     # ─── 物理数据持久化 ───
     volumes:
