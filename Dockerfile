@@ -47,6 +47,9 @@ CMD crontab /etc/mix_cron \
        --upstream-interface-http "$LAN_NET" \
        --buffer-pool-max-size 65536 \
        --udp-rcvbuf-size 16777216 \
+       --noconfig \
+       --verbose 2 \
+       --listen 5140 \
        --maxclients 10 \
        --workers 2 \
        --xff \
