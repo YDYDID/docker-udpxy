@@ -48,8 +48,8 @@ CMD crontab /etc/mix_cron \
        --buffer-pool-max-size 65536 \
        --udp-rcvbuf-size 16777216 \
        --noconfig \
-       --verbose 2 \
-       --listen 5140 \
+       --verbose "$VERBOSE_LEVEL" \
+       --listen "$LISTEN_PORT" \
        --maxclients 10 \
        --workers 2 \
        --xff \
