@@ -28,7 +28,7 @@ case "$1" in\n\
             done\n\
         fi\n\
         if [ -n "$router" ]; then\n\
-            for network in 14.29.0.0/16 183.59.0.0/16 125.88.0.0/16 10.0.0.0/8; do\n\
+            for network in 14.29.0.0/16 183.59.0.0/16 125.88.0.0/16 10.0.0.0/8 224.0.0.0/4; do\n\
                 ip route add $network via $router dev $interface proto static 2>/dev/null\n\
             done\n\
         fi\n\
@@ -74,10 +74,10 @@ CMD crontab /etc/mix_cron \
        --external-m3u $M3U_PATH \
        --external-m3u-update-interval 0 \
        --upstream-interface $LAN_NET \
-       --upstream-interface-fcc $IPTV_NET \
-       --upstream-interface-rtsp $IPTV_NET \
-       --upstream-interface-multicast $IPTV_NET \
-       --upstream-interface-http $LAN_NET \
+       # --upstream-interface-fcc $IPTV_NET \
+       # --upstream-interface-rtsp $IPTV_NET \
+       # --upstream-interface-multicast $IPTV_NET \
+       # --upstream-interface-http $LAN_NET \
        --buffer-pool-max-size 131072 \
        --udp-rcvbuf-size 33554432 \
        --noconfig \
