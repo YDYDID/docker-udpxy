@@ -56,7 +56,7 @@ RUN echo "5 6 * * * cd /data && python3 gdctiptv.py > /proc/1/fd/1 2>&1" > /etc/
 # 5. 前台阻塞启动 rtp2httpd
 CMD crontab /etc/mix_cron \
     && udhcpc -i eth0 -p /var/run/udhcpc.pid \
-       -A 300
+       -t 3 -A 60 \
        -O 28 -O 33 -O 42 -O 43 -O 121 \
        -x 0x0c:$OPT_12 \
        -x 0x3d:01$OPT_61 \
