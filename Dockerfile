@@ -70,7 +70,7 @@ CMD crontab /etc/mix_cron \
     && sleep 5 \
     && (python3 gdctiptv.py || echo "Python 抓取报错，等待后续定时任务重试") \
     && crond -l 2 \
-    && rtp2httpd \
+    && exec rtp2httpd \
        --external-m3u $M3U_PATH \
        --external-m3u-update-interval 0 \
        --upstream-interface $LAN_NET \
