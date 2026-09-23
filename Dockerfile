@@ -55,6 +55,46 @@ RUN pip install --no-cache-dir requests beautifulsoup4 --break-system-packages
 RUN echo "5 6 * * * cd /data && python3 gdctiptv.py > /proc/1/fd/1 2>&1" > /etc/mix_cron
 
 # 最终的启动命令（CMD）：
+CMD crontab /etc/mix_cron \
+    && echo "正在处理 MAC 地址格式..." \
+    && PURE_MAC=$(echo "${OPT_61//:/}" | tr '[:upper:]' '[:lower:]') \
+    && echo "正在为网卡 $IPTV_NET 注入机顶盒伪装 MAC (带冒号): $OPT_61 ..." \
+    && ip link set $IPTV_NET down \
+    && ip link set $IPTV_NET address $OPT_61 \
+    && ip link set $IPTV_NET up \
+    && echo "正在发起带 Option 鉴权的 DHCP 请求 (Option 61 纯十六进制): 01$PURE_MAC ..." \
+    && udhcpc -i $IPTV_NET -p /var/run/udhcpc.pid \
+       -t 3 -A 60 \
+       -O 28 -O 33 -O 42 -O 43 -O 121 \
+       -x 0x0c:$OPT_12 \
+       -x 0x3d:01$PURE_MAC \
+       -V $OPT_60 & \
+    && echo "等待 IPTV 网络拨号就绪并自动写入路由..." \
+    && while ! ip -4 addr show $IPTV_NET | grep -q 'inet '; do sleep 1; done \
+    && sleep 2 \
+    && python3 gdctiptv.py \
+    && crond -l 2 \
+    && rtp2httpd \
+       --external-m3u $M3U_PATH \
+       --external-m3u-update-interval 0 \
+       --upstream-interface $LAN_NET \
+       --upstream-interface-fcc $IPTV_NET \
+       --upstream-interface-rtsp $IPTV_NET \
+       --upstream-interface-multicast $IPTV_NET \
+       --upstream-interface-http $LAN_NET \
+       --buffer-pool-max-size 65536 \
+       --udp-rcvbuf-size 16777216 \
+       --noconfig \
+       --verbose $VERBOSE_LEVEL \
+       --listen $LISTEN_PORT \
+       --maxclients 10 \
+       --workers 2 \
+       --xff \
+       --r2h-token $R2H_TOKEN
+
+
+
+# 最终的启动命令（CMD）：
 # 1. 载入定时任务
 # 2. 【已修正】后台发起带 Option 55 的 DHCP 请求，彻底干掉 -R 确保网关下发，追加 28,33,42,43,121
 # 3. 循环检测网卡，直到 eth0 真正绑定上私网 IP 后，放行 python3
