@@ -12,7 +12,7 @@ RUN apk add --no-cache python3 py3-pip py3-lxml curl tzdata \
 ENV TZ=Asia/Shanghai
 WORKDIR /data
 
-# 🚀 注入完美的默认脚本：重连时清空旧网络、绑定新IP、下发精细路由，并利用 -O 42 自动同步电信内网时间
+# 注入完美的默认脚本：重连时清空旧网络、绑定新IP、下发精细路由，并利用 -O 42 自动同步电信内网时间
 RUN mkdir -p /usr/share/udhcpc && \
     echo -e '#!/bin/sh\n\
 case "$1" in\n\
