@@ -12,7 +12,7 @@ RUN apk add --no-cache python3 py3-pip py3-lxml curl tzdata crontabs bash \
 ENV TZ=Asia/Shanghai
 WORKDIR /data
 
-# 🚀 【核心修正】注入完美的默认脚本：不仅绑定 IP，还要自动根据最新网关写入 Option 121 路由 + 广东电信四大强制分流网段
+# 🚀 注入完美的默认脚本：绑定IP、下发路由、并利用 -O 42 自动同步电信内网时间
 RUN mkdir -p /usr/share/udhcpc && \
     echo -e '#!/bin/sh\n\
 case "$1" in\n\
@@ -20,7 +20,7 @@ case "$1" in\n\
         # 1. 绑定私网 IP 地址\n\
         ip addr add $ip/$mask dev $interface\n\
         \n\
-        # 2. 如果电信通过 Option 121 下发了精细路由，自动循环写入\n\
+        # 2. 自动循环写入 Option 121 细致路由\n\
         if [ -n "$classless_static_routes" ]; then\n\
             set -- $classless_static_routes\n\
             while [ $# -ge 5 ]; do\n\
@@ -29,11 +29,17 @@ case "$1" in\n\
             done\n\
         fi\n\
         \n\
-        # 3. 强制补充广东电信 IPTV 核心骨干网段，自动走最新获取的网关 $router\n\
+        # 3. 强制补充广东电信 IPTV 核心大网段分流\n\
         if [ -n "$router" ]; then\n\
             for network in 14.29.0.0/16 183.59.0.0/16 125.88.0.0/16 10.0.0.0/8; do\n\
                 ip route add $network via $router dev $interface proto static 2>/dev/null\n\
             done\n\
+        fi\n\
+        \n\
+        # 4. 【核心新增】如果电信下发了内网 NTP 服务器，立刻强制同步一次系统时间\n\
+        if [ -n "$ntpsrv" ]; then\n\
+            echo "IPTV NTP Server found: $ntpsrv. Syncing time..."\n\
+            ntpd -n -q -p $ntpsrv 2>/dev/null\n\
         fi\n\
         ;;\n\
 esac' > /usr/share/udhcpc/default.script && \
