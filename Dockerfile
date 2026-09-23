@@ -33,7 +33,7 @@ RUN echo "5 6 * * * cd /data && python3 gdctiptv.py > /proc/1/fd/1 2>&1" > /etc/
 # 4. 后台启动 crond 守护进程
 # 5. 启动 rtp2httpd：将固化的性能优化参数、关闭自带更新参数全部内置，网卡与安全 Token 使用变量动态读取！
 CMD crontab /etc/mix_cron \
-    && udhcpc -i eth0 -n -x hostname:"$OPT_12" -x 0x3d:"01$OPT_61" -V "$OPT_60" \
+    && udhcpc -i eth0 -n -R -x hostname:"$OPT_12" -x 0x3d:"01$OPT_61" -V "$OPT_60" \
     && echo "等待 IPTV 网络拨号就绪..." && while ! ip -4 addr show eth0 | grep -q 'inet '; do sleep 1; done \
     && python3 gdctiptv.py \
     && crond -l 2 \
