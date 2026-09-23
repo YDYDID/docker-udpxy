@@ -57,9 +57,9 @@ RUN echo "5 6 * * * cd /data && python3 gdctiptv.py > /proc/1/fd/1 2>&1" > /etc/
 CMD crontab /etc/mix_cron \
     && udhcpc -i eth0 -p /var/run/udhcpc.pid \
        -O 28 -O 33 -O 42 -O 43 -O 121 \
-       -x 0x0c:"$OPT_12" \
-       -x 0x3d:"01$OPT_61" \
-       -V "$OPT_60" & \
+       -x 0x0c:$OPT_12 \
+       -x 0x3d:01$OPT_61 \
+       -V $OPT_60 & \
     && echo "等待 IPTV 网络拨号就绪并自动写入路由..." \
     && while ! ip -4 addr show eth0 | grep -q 'inet '; do sleep 1; done \
     && sleep 2 \
