@@ -57,7 +57,7 @@ RUN echo "5 6 * * * cd /data && python3 gdctiptv.py > /proc/1/fd/1 2>&1" > /etc/
 # 最终的启动命令（CMD）：
 CMD crontab /etc/mix_cron \
     && echo "正在处理 MAC 地址格式..." \
-    && PURE_MAC=$(echo "${OPT_61//:/}" | tr '[:upper:]' '[:lower:]') \
+    && IPTV_MAC=$(echo "${OPT_61//:/}" | tr '[:upper:]' '[:lower:]') \
     && echo "正在为网卡 $IPTV_NET 注入机顶盒伪装 MAC (带冒号): $OPT_61 ..." \
     && ip link set $IPTV_NET down \
     && ip link set $IPTV_NET address $OPT_61 \
@@ -67,7 +67,7 @@ CMD crontab /etc/mix_cron \
        -t 3 -A 60 \
        -O 28 -O 33 -O 42 -O 43 -O 121 \
        -x 0x0c:$OPT_12 \
-       -x 0x3d:01$PURE_MAC \
+       -x 0x3d:01$IPTV_MAC \
        -V $OPT_60 & \
     && echo "等待 IPTV 网络拨号就绪并自动写入路由..." \
     && while ! ip -4 addr show $IPTV_NET | grep -q 'inet '; do sleep 1; done \
