@@ -5,14 +5,14 @@ FROM ghcr.io/stackia/rtp2httpd:latest AS rtp_base
 FROM alpine:latest
 LABEL maintainer="ydydid"
 
-# 安装基础工具、Python 环境、定时任务，以及预编译的 py3-lxml 库
-RUN apk add --no-cache python3 py3-pip py3-lxml curl tzdata \
+# 安装基础工具、Python 环境、定时任务 crontabs（必须保留，否则后面 crontab 命令不识别），以及预编译的 py3-lxml 库
+RUN apk add --no-cache python3 py3-pip py3-lxml curl tzdata crontabs \
     && rm -rf /var/cache/apk/*
 
 ENV TZ=Asia/Shanghai
 WORKDIR /data
 
-# 注入完美的默认脚本：重连时清空旧网络、绑定新IP、下发精细路由，并自动同步电信内网时间
+# 🚀 注入完美的默认脚本：重连时清空旧网络、绑定新IP、下发精细路由，并利用 -O 42 自动同步电信内网时间
 RUN mkdir -p /usr/share/udhcpc && \
     echo -e '#!/bin/sh\n\
 case "$1" in\n\
@@ -50,6 +50,7 @@ RUN pip install --no-cache-dir requests beautifulsoup4 --break-system-packages
 RUN echo "5 6 * * * cd /data && python3 gdctiptv.py > /proc/1/fd/1 2>&1" > /etc/mix_cron
 
 # 最终的启动命令（CMD）：
+# 💡 完美订正：移除 udhcpc 后台运行符（&）后面的冲突链接符（&&），补齐环境变量
 CMD crontab /etc/mix_cron \
     && echo "正在处理 MAC 地址格式..." \
     && IPTV_MAC=$(echo "${OPT_61//:/}" | tr '[:upper:]' '[:lower:]') \
@@ -64,7 +65,7 @@ CMD crontab /etc/mix_cron \
        -x 0x0c:$OPT_12 \
        -x 0x3d:01$IPTV_MAC \
        -V $OPT_60 & \
-    && echo "等待 IPTV 网络拨号就绪并自动写入路由..." \
+    echo "等待 IPTV 网络拨号就绪并自动写入路由..." \
     && while ! ip -4 addr show $IPTV_NET | grep -q 'inet '; do sleep 1; done \
     && sleep 2 \
     && python3 gdctiptv.py \
