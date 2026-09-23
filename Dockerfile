@@ -49,45 +49,41 @@ RUN pip install --no-cache-dir requests beautifulsoup4 --break-system-packages
 # 配置定时任务
 RUN echo "5 6 * * * cd /data && python3 gdctiptv.py > /proc/1/fd/1 2>&1" > /etc/mix_cron
 
-# 最终的启动命令（CMD 烽火机顶盒高优抢占版：解决关机后无法获取 IP 的终极修正）
+# 最终的启动命令（CMD）：
 CMD crontab /etc/mix_cron \
-    && echo "=== 正在检查关键环境变量 ===" \
-    && if [ -z "$IPTV_NET" ] || [ -z "$OPT_61" ]; then echo "❌ 错误：IPTV_NET 或 OPT_61 未配置！"; exit 1; fi \
-    && IPTV_MAC=$(echo "$OPT_61" | tr -d ':' | tr '[:upper:]' '[:lower:]') \
-    && ip link set dev "$IPTV_NET" down && sleep 2 \
-    && (ip link set dev "$IPTV_NET" address "$OPT_61" || (sleep 2 && ip link set dev "$IPTV_NET" address "$OPT_61")) \
-    && ip link set dev "$IPTV_NET" up && sleep 1 \
-    \
-    # 🏆【核心修正一】：创建 VLAN 0 接口，将所有发出包的 802.1p 优先级死死锁在视频高优等级 4 \
-    && ip link del iptv_vip 2>/dev/null || true \
-    && ip link add link "$IPTV_NET" name iptv_vip type vlan id 0 egress-qos-map 0:4 1:4 2:4 3:4 4:4 5:4 6:4 7:4 \
-    && ip link set dev iptv_vip up \
-    \
-    && echo "正在通过高优接口发起带 Option 鉴权的 DHCP 请求..." \
-    # 🏆【核心修正二】：换用高频重试参数 (-T 2 -A 5)，配合 01$IPTV_MAC 的标准 Client-ID。 \
-    # 如果后续测试发现仍拿不到，请通过 Wireshark 镜像抓包烽火盒子的 Option 61 十六进制串，直接把 01$IPTV_MAC 替换为固定的十六进制字符串 \
-    && udhcpc -i iptv_vip -p /var/run/udhcpc.pid \
-       -T 2 -A 5 \
+    && echo "正在处理 MAC 地址格式..." \
+    && IPTV_MAC=$(echo "${OPT_61//:/}" | tr '[:upper:]' '[:lower:]') \
+    && echo "正在为网卡 $IPTV_NET 注入机顶盒伪装 MAC (带冒号): $OPT_61 ..." \
+    && ip link set $IPTV_NET down \
+    && ip link set $IPTV_NET address $OPT_61 \
+    && ip link set $IPTV_NET up \
+    && echo "正在发起带 Option 鉴权的 DHCP 请求..." \
+    && udhcpc -i $IPTV_NET -p /var/run/udhcpc.pid \
+       -t 3 -A 60 \
        -O 28 -O 33 -O 42 -O 43 -O 121 \
        -x 0x0c:$OPT_12 \
        -x 0x3d:01$IPTV_MAC \
-       -V "$OPT_60" & \
+       -V $OPT_60 & \
     echo "等待 IPTV 网络拨号就绪并自动写入路由..." \
-    && while ! ip -4 addr show dev iptv_vip | grep -q 'inet '; do sleep 1; done \
-    && echo "检测到高优 IP 已成功绑定！等待 5 秒让局端路由表稳定下发..." \
+    && while ! ip -4 addr show $IPTV_NET | grep -q 'inet '; do sleep 1; done \
+    && echo "检测到本地 IP 已成功绑定！等待 5 秒让局端路由表稳定下发..." \
     && sleep 5 \
     && (python3 gdctiptv.py || echo "Python 抓取报错，等待后续定时任务重试") \
     && crond -l 2 \
     && exec rtp2httpd \
-       --external-m3u "$M3U_PATH" \
+       --external-m3u $M3U_PATH \
        --external-m3u-update-interval 0 \
-       --upstream-interface "$LAN_NET" \
+       --upstream-interface $LAN_NET \
+       # --upstream-interface-fcc $IPTV_NET \
+       # --upstream-interface-rtsp $IPTV_NET \
+       # --upstream-interface-multicast $IPTV_NET \
+       # --upstream-interface-http $LAN_NET \
        --buffer-pool-max-size 131072 \
        --udp-rcvbuf-size 33554432 \
        --noconfig \
-       --verbose "$VERBOSE_LEVEL" \
-       --listen "$LISTEN_PORT" \
+       --verbose $VERBOSE_LEVEL \
+       --listen $LISTEN_PORT \
        --maxclients 10 \
        --workers 2 \
        --xff \
-       --r2h-token "$R2H_TOKEN"
+       --r2h-token $R2H_TOKEN
