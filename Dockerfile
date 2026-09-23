@@ -62,7 +62,7 @@ CMD crontab /etc/mix_cron \
     && ip link set $IPTV_NET down \
     && ip link set $IPTV_NET address $OPT_61 \
     && ip link set $IPTV_NET up \
-    && echo "正在发起带 Option 鉴权的 DHCP 请求 (Option 61 纯十六进制): 01$PURE_MAC ..." \
+    && echo "正在发起带 Option 鉴权的 DHCP 请求 (Option 61 纯十六进制): 01$IPTV_MAC ..." \
     && udhcpc -i $IPTV_NET -p /var/run/udhcpc.pid \
        -t 3 -A 60 \
        -O 28 -O 33 -O 42 -O 43 -O 121 \
