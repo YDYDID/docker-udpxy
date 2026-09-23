@@ -69,7 +69,7 @@ CMD crontab /etc/mix_cron \
     && while ! ip -4 addr show $IPTV_NET | grep -q 'inet '; do sleep 1; done \
     && echo "检测到本地 IP 已成功绑定！等待 5 秒让局端路由表稳定下发..." \
     && sleep 5 \
-    && python3 gdctiptv.py \
+    && (python3 gdctiptv.py || echo "Python 抓取报错，等待后续定时任务重试") \
     && crond -l 2 \
     && rtp2httpd \
        --external-m3u $M3U_PATH \
