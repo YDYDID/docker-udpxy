@@ -50,7 +50,7 @@ RUN pip install --no-cache-dir requests beautifulsoup4 --break-system-packages
 RUN echo "5 6 * * * cd /data && python3 gdctiptv.py > /proc/1/fd/1 2>&1" > /etc/mix_cron
 
 # 最终的启动命令（CMD）：
-# 💡 完美订正：移除 udhcpc 后台运行符（&）后面的冲突链接符（&&），补齐环境变量
+# 完美订正版：使用分号 ; 彻底隔离后台进程，确保 udhcpc 在后台坚韧重试，而前台严格按照【改MAC -> 拨号 -> 等待IP -> 跑Python -> 启动服务】的顺序执行！
 CMD crontab /etc/mix_cron \
     && echo "正在处理 MAC 地址格式..." \
     && IPTV_MAC=$(echo "${OPT_61//:/}" | tr '[:upper:]' '[:lower:]') \
@@ -64,10 +64,11 @@ CMD crontab /etc/mix_cron \
        -O 28 -O 33 -O 42 -O 43 -O 121 \
        -x 0x0c:$OPT_12 \
        -x 0x3d:01$IPTV_MAC \
-       -V $OPT_60 & \
+       -V $OPT_60 & ; \
     echo "等待 IPTV 网络拨号就绪并自动写入路由..." \
     && while ! ip -4 addr show $IPTV_NET | grep -q 'inet '; do sleep 1; done \
-    && sleep 2 \
+    && echo "检测到本地 IP 已成功绑定！等待 5 秒让局端路由表稳定下发..." \
+    && sleep 5 \
     && python3 gdctiptv.py \
     && crond -l 2 \
     && rtp2httpd \
