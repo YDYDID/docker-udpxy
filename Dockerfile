@@ -78,8 +78,8 @@ CMD crontab /etc/mix_cron \
        --upstream-interface-rtsp $IPTV_NET \
        --upstream-interface-multicast $IPTV_NET \
        --upstream-interface-http $LAN_NET \
-       --buffer-pool-max-size 65536 \
-       --udp-rcvbuf-size 16777216 \
+       --buffer-pool-max-size 131072 \
+       --udp-rcvbuf-size 33554432 \
        --noconfig \
        --verbose $VERBOSE_LEVEL \
        --listen $LISTEN_PORT \
