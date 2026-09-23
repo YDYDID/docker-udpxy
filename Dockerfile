@@ -5,7 +5,7 @@ FROM ghcr.io/stackia/rtp2httpd:latest AS rtp_base
 FROM alpine:latest
 LABEL maintainer="ydydid"
 
-# 🚀【极度精简】去掉了没有用处的 bash，修正了定时任务包名为官方标准的 dcron
+#【极度精简】去掉了没有用处的 bash，修正了定时任务包名为官方标准的 dcron
 RUN apk add --no-cache python3 py3-pip py3-lxml curl tzdata dcron \
     && rm -rf /var/cache/apk/*
 
