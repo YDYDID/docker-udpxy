@@ -6,7 +6,7 @@ FROM alpine:latest
 LABEL maintainer="ydydid"
 
 # 安装基础工具、Python 环境、定时任务 crontabs（必须保留，否则后面 crontab 命令不识别），以及预编译的 py3-lxml 库
-RUN apk add --no-cache python3 py3-pip py3-lxml curl tzdata crontabs \
+RUN apk add --no-cache python3 py3-pip py3-lxml curl tzdata \
     && rm -rf /var/cache/apk/*
 
 ENV TZ=Asia/Shanghai
