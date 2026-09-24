@@ -23,9 +23,13 @@ services:
       - IPTV_NET=eth0                  # 接光猫 IPTV 的群晖网口
       - LAN_NET=eth1                   # 接家里路由器的群晖主网口
       - R2H_TOKEN=你的实际随机hex  # 你的专属播放鉴权安全 Token 命令: openssl rand -hex 16
+      - M3U_PATH=file:///data/gdctiptv4.m3u
+      - LISTEN_PORT=5140
+      - VERBOSE_LEVEL=2
+      
     
     # ─── 物理数据持久化 ───
     volumes:
       # 请确保你在群晖 File Station 的 docker 文件夹下提前创建了 iptv 子文件夹
-      - /volume1/docker/iptv:/data     
+      - /volume1/docker/rtp2httpd/data:/data     
       - /etc/localtime:/etc/localtime:ro
