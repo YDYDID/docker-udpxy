@@ -74,10 +74,10 @@ CMD crontab /etc/mix_cron \
        --external-m3u $M3U_PATH \
        --external-m3u-update-interval 0 \
        --upstream-interface $LAN_NET \
-       # --upstream-interface-fcc $IPTV_NET \
-       # --upstream-interface-rtsp $IPTV_NET \
-       # --upstream-interface-multicast $IPTV_NET \
-       # --upstream-interface-http $LAN_NET \
+       --upstream-interface-fcc $IPTV_NET \
+       --upstream-interface-rtsp $IPTV_NET \
+       --upstream-interface-multicast $IPTV_NET \
+       --upstream-interface-http $LAN_NET \
        --buffer-pool-max-size 131072 \
        --udp-rcvbuf-size 33554432 \
        --noconfig \
